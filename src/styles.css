@@ -1,0 +1,28 @@
+/* You can add global styles to this file, and also import other style files */
+@import "~bootstrap/dist/css/bootstrap.min.css";
+@import "../node_modules/c3/c3.min.css";
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+#chart .c3-line {
+  stroke-width: 1.85px;
+}
+
+.c3-axis-y text 
+{
+  font-size: 12px;
+}
+
+.c3-axis-x text 
+{
+  font-size: 12px;
+}
+
+.mat-form-field {
+    color: #FAFAFA;
+}
+
+.mat-form-field-appearance-fill .mat-form-field-flex {
+  background-color: rgba(0,0,0,.06);
+}

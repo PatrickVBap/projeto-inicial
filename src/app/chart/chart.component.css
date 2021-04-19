@@ -1,0 +1,68 @@
+.positions{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 100%;
+    padding-left: 30px;
+    padding-top: 120px;
+}
+
+.indicators{
+    display: flex;
+    flex-direction: row;
+    height: 65%;
+    width: 100%;
+}
+
+.cards{
+    height: 55%;
+    top: 0;
+    bottom: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-left: 65px;
+    padding-top: 20px;
+
+    text-align: center;
+    align-items: center;
+}
+
+.maior_media{
+    width: 257px;
+    height: 56px;
+
+    display: flex;
+    color: black;
+    background: rgba(255, 0, 0, 0.7);
+    border-radius: 15px;
+    align-items: center;
+    justify-content: center;
+}
+
+.menor_media{
+    width: 257px;
+    height: 56px;
+
+    display: flex;
+    color: black;
+    border-radius: 15px;
+    align-content: center;
+    background: rgba(39, 239, 6, 0.7);
+    align-items: center;
+    justify-content: center;
+}
+
+.media_geral{
+    width: 257px;
+    height: 56px;
+
+    display: flex;
+    color: black;
+    border-radius: 15px;
+    align-content: center;
+    background: rgba(190, 178, 178, 0.7);
+    align-items: center;
+    justify-content: center;
+}

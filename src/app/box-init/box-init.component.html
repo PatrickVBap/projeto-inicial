@@ -1,0 +1,23 @@
+<div class="box">
+    <h2 class="text-retangulo-central">Configuração</h2>
+
+    <div class="inputs" style='padding-top: 20px;'>
+        <mat-form-field appearance="fill" style="color: black; display: flex; flex-direction: column; width: 65%;">
+            <mat-label style='width: 100%;'>Título</mat-label>
+            <input matInput id='inputText' style='width: 100%;' type='text' (keyup)='atribuiDados($event)' [value]='nomeEmpresa'>
+        </mat-form-field>
+
+        <br>
+
+        <mat-form-field style='width: 65%; color: black;' appearance="fill">
+            <mat-label>Escolha uma data</mat-label>
+            <input matInput [matDatepicker]="picker" (dateChange)='atribuiData($event)' [max]="maximaData" [formControl]="dataInicio">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker disabled='false'></mat-datepicker>
+        </mat-form-field>
+
+        <br>
+        
+        <button id='botao-init' mat-raised-button style='width: 100px; margin-top: 7px;' color="primary" (click)='apertouBotao()'> Entrar </button>
+    </div>
+</div>

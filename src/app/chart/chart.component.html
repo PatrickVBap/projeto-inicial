@@ -1,0 +1,16 @@
+<div class='positions'>
+    <h1 id='titulo-chart' style="padding-left: 30px;">{{ titulo | uppercase }}</h1>
+    <br>
+    <div class='indicators'>
+        <div style="width: 65%;" id='chart' class='chart-position'></div>
+        <div class='cards'>
+            <div class='maior_media' [style.background-color]='colorMaiorMedia'> Maior média: {{ maiorMedia }} </div>
+            <div class='menor_media' [style.background-color]='colorMenorMedia'> Menor média: {{ menorMedia }} </div>
+            <div class='media_geral'> Média geral: {{ mediaGeral }} kW</div>
+        </div>
+    </div>
+    <br>
+    <h3>Período de exibição: {{ dataInicio }} - {{ dataFinal }}</h3>
+    <br>
+    <button id='botao-back' mat-raised-button style='width: 12.5%; padding-left: 20px;' color="primary" routerLink=''> Voltar </button>
+</div>
