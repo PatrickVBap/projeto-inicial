@@ -1,5 +1,8 @@
+import { IntegracaoService } from '../services/integracao.service';
+import { IDia, Dia } from './../models/dia.model';
+import { IDadosDia, DadosDia } from './../models/dados-dia.model';
 import { Component, OnInit } from '@angular/core';
-import { TranfererService } from './../tranferer.service';
+import { TranfererService } from '../services/tranferer.service';
 import * as c3 from 'c3';
 import { ActivatedRoute } from '@angular/router';
 
@@ -12,12 +15,17 @@ export class ChartComponent implements OnInit{
   
   //Geral
   titulo: string = 'Garfsoft';
-  dataInicio;
-  dataFinal;
-  grafico;
+  dataInicioString: string;
+  dataFinalString: string;
+  grafico: c3.ChartAPI;
   diasDaSemana = [];
   diasDaSemanaNum = [];
-  numeroDeDias;
+  nomeDiasDaSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+  //teste de integração
+  dia: IDia = Dia.ofEmpty();
+  dadosDoDia: IDadosDia = DadosDia.ofEmpty();
+  datasEscolhidas = [];
 
   //Cálculo para o gráfico
   linhaMedia = [];
@@ -29,63 +37,40 @@ export class ChartComponent implements OnInit{
   colorMaiorMedia: string;
   colorMenorMedia: string;
 
+  //Construtor
   constructor(private transfereService: TranfererService,
-    private route: ActivatedRoute) {
+    private route: ActivatedRoute,
+    private integracao: IntegracaoService) {
     console.log('chart works');
     this.titulo = this.transfereService.getNome();
 
     //Recebe Data - Query Params
     this.route.queryParams.subscribe(
       (queryParams: any) => {
-        this.dataInicio = queryParams['dataDeInicio'];
-        this.dataFinal = queryParams['dataDeFim'];
+        this.dataInicioString = queryParams['dataDeInicioString'];
+        this.dataFinalString = queryParams['dataDeFimString'];
         this.diasDaSemanaNum = queryParams['diasDaSemana'];
-        this.numeroDeDias = queryParams['numeroDeDias'];
+        this.datasEscolhidas = queryParams['datasEscolhidas'];
       }
     );
 
-    console.log(this.diasDaSemanaNum);
-    for(let i = 0; i < this.diasDaSemanaNum.length; i++){
-      if(this.diasDaSemanaNum[0] == "0"){
-        this.diasDaSemanaNum.splice(0, 1);
-        this.diasDaSemanaNum.push("6");
-      } else{
-        let aux = Number(this.diasDaSemanaNum[0])
-        this.diasDaSemanaNum.splice(0, 1);
-        this.diasDaSemanaNum.push(String(aux-1));
-      }
-    }
-    console.log(this.diasDaSemanaNum);    
-
-    for(let i = 0; i < 97; i++){
+    //Número de dados no eixo x
+    for(let i = 0; i < 24; i++){
       this.nums.push(i)
     }
   }
 
   ngOnInit(): void {
-    this.calculaData();
-    this.encontraMedias();
 
+    //Chama funcao que calcula dados e indicadores
+    this.calculaData();
+
+    //Gera gráfico
     this.grafico = c3.generate({
       bindto: '#chart',
       data: {
-        x: 'x',
-        columns: [
-            ['Seg', ...this.dataDays[0]],
-            ['Ter', ...this.dataDays[1]],
-            ['Qua', ...this.dataDays[2]],
-            ['Qui', ...this.dataDays[3]],
-            ['Sex', ...this.dataDays[4]],
-            ['Sáb', ...this.dataDays[5]],
-            ['Dom', ...this.dataDays[6]],
-            ['Média', ...this.linhaMedia],
-            ['x', ...this.nums]
-        ],
-
-        colors:{
-          Média: 'grey'
-        },
-      }, 
+        columns: [],
+      },
 
       axis: {
         x:{
@@ -96,11 +81,12 @@ export class ChartComponent implements OnInit{
           tick:{
             count: 7,
             format: function(x){
-              return 4*Math.floor(x.valueOf()/15.8333);
+              return Math.ceil(x.valueOf());
             }
           },
           padding: {
-            left: 0
+            left: 0,
+            right: 0.2
           }
         },
 
@@ -118,120 +104,71 @@ export class ChartComponent implements OnInit{
         show: false
       },
     });
-
-    this.grafico.unload({
-      ids: [...this.diasDaSemana]
-    });
-
-    
   }
 
+  //Calcula dados do gráfico
   calculaData(){
-    for(let i = 0; i < 7; i++){
-      let dadosBase = [];   
-      let dados = [];
-      let sum = 0;
+    //Geracao de linhas no grafico
+    this.integracao.list().subscribe(dados => {
+      let objetos = [];
+      let medias = [];
+      let linhaMedia = [];
+      for(let i = 0; i < this.datasEscolhidas.length; i++){
+        let dataArray = this.datasEscolhidas[i].split('/');
+        let d = new Date(dataArray[2], dataArray[1]-1, dataArray[0]);
+        let index =  dados.findIndex(obj => obj.dataNumber == (dataArray[0]+dataArray[1]+dataArray[2]));
 
-      for(let i = 0; i < 7; i++){
-        dadosBase.push(Math.random()*0.5 + 4);
+        if(index !== -1){
+          this.grafico.load({
+            columns: [[this.nomeDiasDaSemana[d.getDay()], ...dados[index].dadosDoDia]]
+          });
+
+          objetos.push(dados[index]);
+          medias.push(dados[index].mediaDoDia);
+        }
       }
 
-      for(let j = 0; j < 96; j++){
-        sum = dados.push(dadosBase[i] - 0.13 + Math.random()*0.22)
+      //Linha media
+      for(let i = 0; i < 24; i++){
+        linhaMedia[i] = 0;
+        for(let j = 0; j < objetos.length; j++){
+          linhaMedia[i] = linhaMedia[i] + objetos[j].dadosDoDia[i];
+        }
+        linhaMedia[i] = linhaMedia[i]/objetos.length;
       }
 
-      this.dataDays.push(dados)
-    }
+      this.grafico.load({
+        columns: [['Média', ...linhaMedia]],
+        colors: {'Média': 'rgba(190, 178, 178, 1)'}
+      });
 
-    let sumMedia = 0;
-    for(let i = 0; i < 96; i++){
-      for(let j = 0; j < this.diasDaSemanaNum.length; j++){
-        sumMedia += this.dataDays[Number(this.diasDaSemanaNum[j])][i];
-      }
-      this.linhaMedia.push(sumMedia/this.diasDaSemanaNum.length);
-      sumMedia = 0;
-    }
-
-    //Verifica dias das semana
-    if(this.diasDaSemanaNum.indexOf("0") == -1){
-      this.diasDaSemana.push("Seg");
-    }
-    if(this.diasDaSemanaNum.indexOf("1") == -1){
-      this.diasDaSemana.push("Ter");
-    }
-    if(this.diasDaSemanaNum.indexOf("2") == -1){
-      this.diasDaSemana.push("Qua");
-    }
-    if(this.diasDaSemanaNum.indexOf("3") == -1){
-      this.diasDaSemana.push("Qui");
-    }
-    if(this.diasDaSemanaNum.indexOf("4") == -1){
-      this.diasDaSemana.push("Sex");
-    }
-    if(this.diasDaSemanaNum.indexOf("5") == -1){
-      this.diasDaSemana.push("Sáb");
-    }
-    if(this.diasDaSemanaNum.indexOf("6") == -1){
-      this.diasDaSemana.push("Dom");
-    }
-    
-    console.log(this.diasDaSemana);
-    
-
-  }
-
-  encontraMedias(){
-    let semana = [];
-    let diasDaSemana = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-    let cores = ['rgba(0, 0, 255, 0.7)', 'rgba(255, 165, 0, 0.7)', 'rgba(0, 255, 0, 0.7)', 'rgba(255, 0, 0, 0.7)', 'rgba(153, 51, 153, 0.7)', 'rgba(150, 75, 0, 0.7)', 'rgba(255, 0, 127, 0.6)'];
-    let sum = 0;
-    let sumMedia = 0;
-    let maior;
-    let menor;
-
-    for(let i = 0; i < 7; i++){
-      for(let j = 0; j < 96; j++){
-        sum += this.dataDays[i][j];
-      }
-
-      semana.push(sum/96);
-      sum = 0;
-    }
-
-    for(let i = 0; i < 96; i++){
-      sumMedia += this.linhaMedia[i];
-    }
-
-    console.log(this.diasDaSemanaNum);
-    let semanaVar = semana.slice(0);
-    console.log(semanaVar);
-    let aux = 0;
-    while(aux == 0){
-      if(this.diasDaSemanaNum.includes(String(semana.indexOf(Math.max(...semanaVar))))){
-        maior = semana.indexOf(Math.max(...semanaVar));
-        aux = 1;
+      //Media geral 
+      if(medias.length > 0){
+        let soma = 0
+        for(let i = 0; i < medias.length; i++){
+          soma = soma + medias[i];
+        }
+        this.mediaGeral = (soma/medias.length).toFixed(2).toString();
       } else{
-        semanaVar.splice(semanaVar.indexOf(Math.max(...semanaVar)), 1);
+        this.mediaGeral = (0).toFixed(2).toString();
       }
-    }
 
-    semanaVar = [];
-    semanaVar = semana.slice(0);
-    aux = 0;
-    while(aux == 0){
-      if(this.diasDaSemanaNum.includes(String(semana.indexOf(Math.min(...semanaVar))))){
-        menor = semana.indexOf(Math.min(...semanaVar));
-        aux = 1;
-      } else{
-        semanaVar.splice(semanaVar.indexOf(Math.min(...semanaVar)), 1);
+      if(medias.length > 0){//Apenas para não dar erro "data from undefined"
+        //Maior media
+        let dataArray1 = dados[dados.findIndex(obj => obj.mediaDoDia == medias[medias.indexOf(Math.max(...medias))])].data.split('/');
+        let d1 = new Date(dataArray1[2], dataArray1[1]-1, dataArray1[0]);
+        this.maiorMedia = this.nomeDiasDaSemana[d1.getDay()];
+
+        //Menor media
+        let dataArray2 = dados[dados.findIndex(obj => obj.mediaDoDia == medias[medias.indexOf(Math.min(...medias))])].data.split('/');
+        let d2 = new Date(dataArray2[2], dataArray2[1]-1, dataArray2[0]);
+        this.menorMedia = this.nomeDiasDaSemana[d2.getDay()];
       }
-    }
 
-    this.maiorMedia = diasDaSemana[maior];
-    this.menorMedia = diasDaSemana[menor];
-    this.mediaGeral = (sumMedia/96).toFixed(2);
-
-    this.colorMaiorMedia = cores[maior];
-    this.colorMenorMedia = cores[menor];
+      //Cores dos indicadores
+      let cores = ['rgba(0, 0, 255, 0.7)', 'rgba(255, 165, 0, 0.7)', 'rgba(0, 255, 0, 0.7)', 'rgba(255, 0, 0, 0.7)', 'rgba(153, 51, 153, 0.7)', 'rgba(150, 75, 0, 0.7)', 'rgba(255, 0, 127, 0.6)'];
+      this.colorMaiorMedia = cores[medias.indexOf(Math.max(...medias))];
+      this.colorMenorMedia = cores[medias.indexOf(Math.min(...medias))];
+    });
   }
 }

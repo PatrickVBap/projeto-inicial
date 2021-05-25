@@ -13,19 +13,16 @@ export class TranfererService {
 
   setData(nome){
     this.nome = nome;
-    console.log('setData working');
   }
 
   getNome(){
     let temp = this.nome;
 
     this.clearNome();
-    console.log('getNome working');
     return temp;
   }
 
   clearNome(){
     this.nome = 'Garfsoft';
-    console.log('clearData working')
   }
 }
